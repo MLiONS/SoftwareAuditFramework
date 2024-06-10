@@ -1,3 +1,15 @@
+#Software Audit Framework
+This framework is designed to facilitate a comprehensive audit of software systems to ensure compliance, security, and efficiency. The audit process includes several key steps:
+
+##Physical Inspection
+Conducting physical inspections of systems is essential to ensure that no unauthorized devices or hardware are connected to the network. This step helps in identifying potential security breaches and ensuring that the system is in compliance with organizational policies and regulations.
+
+##Vulnerability Assessment (VA)
+Performing a vulnerability assessment is a crucial step in identifying and mitigating potential security risks within software systems. This process involves scanning the system for known vulnerabilities and weaknesses that could be exploited by attackers. VA helps in prioritizing and addressing security issues effectively.
+
+##Static Application Security Testing (SAST)
+SAST involves analyzing the source code or binary of an application to identify and eliminate security vulnerabilities early in the development process. This step helps in ensuring that the software is secure and free from common security flaws such as SQL injection, cross-site scripting (XSS), and buffer overflows.
+
 ## System Fingerprinting
 ### What is Fingerprinting?
 System fingerprinting is the process of collecting and identifying various characteristics and details about a system. This includes hardware details, software configurations, network settings, and other system-specific information. The collected data forms a unique "fingerprint" of the system, which can be used for various purposes such as monitoring, security, compliance, and troubleshooting.
