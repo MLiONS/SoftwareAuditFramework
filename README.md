@@ -15,10 +15,10 @@ Monitoring: Regular fingerprinting can help in monitoring the health and perform
 #### Linux
 Clone the Repository
 ```bash
-git clone https://github.com/Pr4kharam/Fingerprint-of-a-System
+git clone https://github.com/MLiONS/SoftwareAuditFramework
 ```
 ```bash
-cd Fingerprint-of-a-System
+cd SoftwareAuditFramework
 
 cd Linux
 ```
@@ -28,13 +28,13 @@ Before running the script, you need to give it execution permissions.
 
 This can be done using the following command:
 ```bash
-chmod +x fingerprint.sh
+chmod +x system_fingerprint_linux.sh
 ```
 Run the Script
 
 Execute the script to generate a fingerprint of your system:
 ```bash
-./system_fingerprint.sh
+./system_fingerprint_linux.sh
 ```
 Output
 
@@ -44,10 +44,10 @@ The script will generate a report with detailed information about your system's 
 
 Clone the Repository
 ```bash
-git clone https://github.com/Pr4kharam/Fingerprint-of-a-System
+git clone https://github.com/MLiONS/SoftwareAuditFramework
 ```
 ```bash
-cd Fingerprint-of-a-System
+cd SoftwareAuditFramework
 
 cd Windows
 ```
@@ -58,7 +58,7 @@ Before running the PowerShell script, you need to set the execution policy to al
 
 This can be done using the following command:
 ```bash
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+Set-ExecutionPolicy Unrestricted -Scope CurrentUser
 ```
 
 Run the Script
