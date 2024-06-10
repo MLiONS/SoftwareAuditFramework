@@ -1,3 +1,5 @@
+# Output file
+$outputFile = "system_info.txt"
 # Function to get a list of installed programs from various Windows Registry locations
 function Get-InstalledProgramsFromRegistry {
     $registryLocations = @(
@@ -33,24 +35,23 @@ function Get-InstalledProgramsFromRegistry {
     return $programs
 }
 
-# Function to get a list of installed programs from user-specific Windows Registry locations
 function Get-InstalledProgramsFromUserRegistry {
     $programs = @()
 
     try {
-        $userHive = Get-Item -LiteralPath "HKU:"
+        $userHive = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::Users, [Microsoft.Win32.RegistryView]::Default)
         $userSubkeys = $userHive.GetSubKeyNames()
 
         foreach ($userSubkeyName in $userSubkeys) {
             $userRegistryPath = "$userSubkeyName\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
 
             try {
-                $key = Get-Item -LiteralPath " :\$userRegistryPath"
+                $key = $userHive.OpenSubKey($userRegistryPath)
                 $subkeyCount = $key.SubKeyCount
 
                 for ($i = 0; $i -lt $subkeyCount; $i++) {
                     $subkeyName = $key.GetSubKeyNames()[$i]
-                    $subkey = Get-Item -LiteralPath "HKU:\$userRegistryPath\$subkeyName"
+                    $subkey = $key.OpenSubKey($subkeyName)
 
                     $program = @{
                         "Name" = $subkey.GetValue("DisplayName")
