@@ -2,7 +2,7 @@
 ### What is Fingerprinting?
 System fingerprinting is the process of collecting and identifying various characteristics and details about a system. This includes hardware details, software configurations, network settings, and other system-specific information. The collected data forms a unique "fingerprint" of the system, which can be used for various purposes such as monitoring, security, compliance, and troubleshooting.
 
-## Why is Fingerprinting Important?
+### Why is Fingerprinting Important?
 Security: Fingerprinting helps in identifying unauthorized changes or potential security breaches. By comparing the current fingerprint with a known good state, discrepancies can be quickly identified.
 
 Compliance: Many industries have regulations that require detailed documentation of system configurations. Fingerprinting automates this process, ensuring that all necessary information is collected and stored.
