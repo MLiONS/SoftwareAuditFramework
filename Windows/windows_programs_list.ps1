@@ -1,10 +1,7 @@
-# Output file
-$outputFile = "system_info.txt"
-# Function to get a list of installed programs from various Windows Registry locations
 function Get-InstalledProgramsFromRegistry {
     $registryLocations = @(
         "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-        "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+        "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
     )
     $programs = @()
 
@@ -17,13 +14,16 @@ function Get-InstalledProgramsFromRegistry {
                 $subkeyName = $key.GetSubKeyNames()[$i]
                 $subkey = Get-Item -LiteralPath "HKLM:\$location\$subkeyName"
 
-                $program = @{
-                    "Name" = $subkey.GetValue("DisplayName")
-                    "Version" = $subkey.GetValue("DisplayVersion")
-                    "InstallLocation" = $subkey.GetValue("InstallLocation")
-                }
+                $name = $subkey.GetValue("DisplayName")
+                $version = $subkey.GetValue("DisplayVersion")
+                $installLocation = $subkey.GetValue("InstallLocation")
 
-                if ($program["Name"]) {
+                if ($name) {
+                    $program = @{
+                        "Name" = $name
+                        "Version" = $version
+                        "InstallLocation" = $installLocation
+                    }
                     $programs += $program
                 }
             }
@@ -35,6 +35,7 @@ function Get-InstalledProgramsFromRegistry {
     return $programs
 }
 
+# Function to get a list of installed programs from the user-specific registry
 function Get-InstalledProgramsFromUserRegistry {
     $programs = @()
 
@@ -53,13 +54,16 @@ function Get-InstalledProgramsFromUserRegistry {
                     $subkeyName = $key.GetSubKeyNames()[$i]
                     $subkey = $key.OpenSubKey($subkeyName)
 
-                    $program = @{
-                        "Name" = $subkey.GetValue("DisplayName")
-                        "Version" = $subkey.GetValue("DisplayVersion")
-                        "InstallLocation" = $subkey.GetValue("InstallLocation")
-                    }
+                    $name = $subkey.GetValue("DisplayName")
+                    $version = $subkey.GetValue("DisplayVersion")
+                    $installLocation = $subkey.GetValue("InstallLocation")
 
-                    if ($program["Name"]) {
+                    if ($name) {
+                        $program = @{
+                            "Name" = $name
+                            "Version" = $version
+                            "InstallLocation" = $installLocation
+                        }
                         $programs += $program
                     }
                 }
@@ -77,20 +81,27 @@ function Get-InstalledProgramsFromUserRegistry {
 # Function to get a list of installed programs using WMIC
 function Get-InstalledProgramsWithWmic {
     try {
-        $wmicOutput = Invoke-Expression -Command "wmic product get Name,Version,InstallLocation /format:csv"
+        $wmicOutput = wmic product get Name,Version,InstallLocation /format:csv
         $lines = $wmicOutput -split '\r?\n' | ForEach-Object { $_.Trim() }
         $fieldnames = $lines[0] -split ',' | ForEach-Object { $_.Trim() }
         $programs = @()
 
         for ($i = 1; $i -lt $lines.Count; $i++) {
             $values = $lines[$i] -split ',' | ForEach-Object { $_.Trim() }
-            $program = @{
-                "Name" = $values[$fieldnames.IndexOf("Name")]
-                "Version" = $values[$fieldnames.IndexOf("Version")]
-                "InstallLocation" = $values[$fieldnames.IndexOf("InstallLocation")]
-            }
+            if ($values.Count -eq $fieldnames.Count) {
+                $name = $values[$fieldnames.IndexOf("Name")]
+                $version = $values[$fieldnames.IndexOf("Version")]
+                $installLocation = $values[$fieldnames.IndexOf("InstallLocation")]
 
-            $programs += $program
+                if ($name) {
+                    $program = @{
+                        "Name" = $name
+                        "Version" = $version
+                        "InstallLocation" = $installLocation
+                    }
+                    $programs += $program
+                }
+            }
         }
 
         return $programs
@@ -102,20 +113,16 @@ function Get-InstalledProgramsWithWmic {
 # Function to get a list of installed UWP apps using PowerShell Get-AppxPackage
 function Get-InstalledUwpApps {
     try {
-        $powershellOutput = Get-AppxPackage | Select-Object Name, Version, InstallLocation | Format-Table -HideTableHeaders -AutoSize
-        $lines = $powershellOutput -split '\r?\n' | ForEach-Object { $_.Trim() }
+        $uwpApps = Get-AppxPackage | Select-Object Name, Version, InstallLocation
         $programs = @()
 
-        foreach ($line in $lines) {
-            $values = $line -split '\s+' | ForEach-Object { $_.Trim() }
-
-            if ($values.Count -ge 3) {
+        foreach ($app in $uwpApps) {
+            if ($app.Name) {
                 $program = @{
-                    "Name" = $values[0]
-                    "Version" = $values[1]
-                    "InstallLocation" = $values[2]
+                    "Name" = $app.Name
+                    "Version" = $app.Version
+                    "InstallLocation" = $app.InstallLocation
                 }
-
                 $programs += $program
             }
         }
@@ -136,15 +143,16 @@ function Merge-AndRemoveDuplicates {
     )
 
     $mergedPrograms = $programs1 + $programs2 + $programs3 + $programs4
-    $uniquePrograms = @()
+    $uniquePrograms = @{}
 
     foreach ($program in $mergedPrograms) {
-        if ($program -notin $uniquePrograms) {
-            $uniquePrograms += $program
+        $key = "$($program.Name)-$($program.Version)-$($program.InstallLocation)"
+        if (-not $uniquePrograms.ContainsKey($key)) {
+            $uniquePrograms[$key] = $program
         }
     }
 
-    return $uniquePrograms
+    return $uniquePrograms.Values
 }
 
 # Export the list of installed programs to a CSV file
@@ -155,28 +163,6 @@ function Export-ToCsv {
     )
 
     $programs | Export-Csv -Path $csvFilename -NoTypeInformation -Encoding UTF8
-}
-
-# Helper function to enumerate subkeys under a registry key
-function Iter-Subkeys {
-    param (
-        [Microsoft.Win32.RegistryKey]$key
-    )
-
-    $subkeys = @()
-    $index = 0
-
-    while ($true) {
-        try {
-            $subkeyName = $key.GetSubKeyNames()[$index]
-            $subkeys += $subkeyName
-            $index++
-        } catch [System.Management.Automation.ItemNotFoundException] {
-            break
-        }
-    }
-
-    return $subkeys
 }
 
 # Export the list of installed programs to a TXT file
@@ -193,17 +179,6 @@ function Export-ToTxt {
     $content | Out-File -FilePath $txtFilename -Encoding UTF8
 }
 
-
-# Run commands and write to the output file
-#Execute-And-Write "systeminfo"
-#Execute-And-Write "hostname"
-#Execute-And-Write "systeminfo | Select-String 'BIOS Version'"
-#Execute-And-Write "Get-WmiObject -Class Win32_ComputerSystem | Format-List *"
-#Execute-And-Write "Get-WmiObject -Class Win32_Baseboard | Format-List *"
-#Execute-And-Write "Get-WmiObject -Class Win32_PhysicalMemory | Format-List *"
-
-
-
 # Main script
 $registryPrograms = Get-InstalledProgramsFromRegistry
 $userRegistryPrograms = Get-InstalledProgramsFromUserRegistry
@@ -211,10 +186,8 @@ $wmicPrograms = Get-InstalledProgramsWithWmic
 $uwpPrograms = Get-InstalledUwpApps
 $allPrograms = Merge-AndRemoveDuplicates -programs1 $registryPrograms -programs2 $userRegistryPrograms -programs3 $wmicPrograms -programs4 $uwpPrograms
 $txtFilename = "installed_programs.txt"
-Export-ToTxt -programs $allPrograms -txtFilename $txtFilename
-Write-Host "Exported $($allPrograms.Count) unique installed programs to $txtFilename."
+$csvFilename = "installed_programs.csv"
 
-# Write a summary to the output file
-Add-Content -Path $outputFile -Value ("=" * 50)
-Add-Content -Path $outputFile -Value "Summary: Exported $($allPrograms.Count) unique installed programs to $txtFilename."
-Add-Content -Path $outputFile -Value ("=" * 50)
+Export-ToTxt -programs $allPrograms -txtFilename $txtFilename
+
+Write-Host "Exported $($allPrograms.Count) unique installed programs to $txtFilename and $csvFilename."
